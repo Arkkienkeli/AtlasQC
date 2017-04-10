@@ -67,7 +67,7 @@ Samples marked blue - not passed QC
 Samples marked red - changed GT class
 
 ### AUTHORS
-Daria Yakovishina, PhD
+Daria Iakovishina, PhD
 
 Nikita Moshkov
 
