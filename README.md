@@ -1,4 +1,4 @@
-# AtlasQC
+# CueSea
 
 ### INTRODUCTION
 This tool is designed for quality control of Illumina  microarrays genotyping data.
