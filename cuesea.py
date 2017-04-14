@@ -8,7 +8,6 @@ from  math import atan2
 from math import atan
 from math import pi
 from math import degrees
-from matplotlib.lines import Line2D
 import numpy as np
 from sklearn import linear_model
 from scipy.spatial.distance import euclidean
@@ -27,6 +26,7 @@ class Forel(object):
 		self.result = []
 		self.resultR = []
 		self.resultG = []
+		self.resultMT = []
 		self.genotypes = {}
 		self.refgenotypes = refgenotypes
 		self.real_genotypes = real_genotypes
@@ -34,6 +34,7 @@ class Forel(object):
 		self.gender = gender
 		self.R = angle
 		self.HW = True
+		self.resultCluster = []
 		self.main()
 
 
@@ -118,6 +119,7 @@ class Forel(object):
 				else:
 					angle = np.rad2deg(np.arctan2(np.array(centers[i])[1], np.array(centers[i])[0]))
 					angle_center = np.rad2deg(np.arctan2( ( abs(np.array(list(zip(*classes[i]))[1])[-1] - np.array(list(zip(*classes[i]))[1])[0])), abs((lr_result[-1] - lr_result[0]))))
+
 				cental_line_angles.append(angle_center)
 				central_angles.append(angle)
 				lrr.append(lr)
@@ -247,8 +249,9 @@ class Forel(object):
 			if failed_clusters[i] == 1:
 				for j in range(len(X)):
 					if X[j] in classes[i]:
+						self.resultCluster.append(labels[j])
 						self.result.append(labels[j])
-
+		
 		cl = []
 		ymax = 1.0
 		xmax = 1.0
@@ -288,7 +291,7 @@ class Forel(object):
 				self.resultG.append(res)
 				self.result.append(res)
 			if self.chromosome == "MT" and self.genotypes[res] == "AB":
-				self.resultG.append(res)
+				self.resultMT.append(res)
 				self.result.append(res)
 
 		self.HW == self.Hardy_Weinberg_Equilibrium()
@@ -300,6 +303,7 @@ class Forel(object):
 
 
 		self.result = list(set(self.result))
+		
 		for i in range(len(X)):
 			if labels[i] in self.genotypes.keys():
 				if self.genotypes[labels[i]] == self.refgenotypes[labels[i]] and labels[i] not in self.result:
@@ -446,17 +450,16 @@ class Forel(object):
 			for ke in alleles.keys():
 				if ke != key:
 					expected_GF[''.join(sorted(key + ke))] = 2 * observed_AF[key] * observed_AF[ke]
-				elif alleles[ke] == alleles[key]:
+				elif ke == key:
 					expected_GF[''.join(sorted(key + ke))] = observed_AF[key] ** 2
-
 
 		observed_genotypes = {}
 
 		for key in self.real_genotypes.keys():
-			if ''.join(sorted(self.real_genotypes[key])) not in self.real_genotypes.keys():
+			if ''.join(sorted(self.real_genotypes[key])) not in observed_genotypes.keys():
 				observed_genotypes[''.join(sorted(self.real_genotypes[key]))] = 1
 			else:
-				observed_genotypes[''.join(sorted(self.real_genotypes[key]))] = 1 + self.real_genotypes[''.join(sorted(self.real_genotypes[key]))]
+				observed_genotypes[''.join(sorted(self.real_genotypes[key]))] = 1 + observed_genotypes[''.join(sorted(self.real_genotypes[key]))]
 
 		genotypes_count = sum(observed_genotypes.values())
 		observed_GF = {}
@@ -469,12 +472,14 @@ class Forel(object):
 
 		sum_chi = 0
 		for key in observed_GF.keys():
-			sum_chi = sum_chi + ((observed_GF[key] - expected_GF[key]) ** 2) / expected_GF[key]
+			sum_chi = sum_chi + ((observed_genotypes[key] - (expected_GF[key] * (alleles_count / 2)) ) ** 2 ) / (expected_GF[key] * (alleles_count / 2))
+
 
 		if sum_chi > 3.85:
 			return False
 		else:
 			return True
+
 
 
 class QualityControl(object):
@@ -498,24 +503,25 @@ class QualityControl(object):
 		notPassedG = {}
 		HWstatus = {}
 		genotypes = {}
+		notPassedMT = {}
+		notPassedC = {}
 
 
 		with open(args.data, 'r') as f:
 			reader = csv.reader(f, delimiter = '\t')
 			for row in reader:
-				if row[0] in self.snps.keys():
-					if row[27] != 'NaN' and row[28] != 'NaN':
+				if len(row) > 20 and row[27] !='X' and row[27] != 'NaN' and row[28] != 'NaN':
+					if self.snps == None or row[0] in self.snps.keys():
 						if row[0] not in party_data.keys():
 							party_data[row[0]] = []
 							party_data_genotype[row[0]] = {}
 							party_data_real_genotype[row[0]] = {}
 							party_data_chromosome[row[0]] = row[16]
-							if row[2] == row[3] and row[2] != '-':
+							if (row[2] == row[3] and row[2] != '-'):
 								party_data[row[0]].append({row[1] : [float(row[27]), float(row[28])] })
 								party_data_genotype[row[0]][row[1]] = 'AA'
 								party_data_real_genotype[row[0]][row[1]] = row[2] + row[3]
 							elif row[2] != row[3] and row[2] != '-' and row[3] != '-':
-								party_data_chromosome[row[0]] = row[16]
 								party_data[row[0]].append({row[1] : [float(row[27]), float(row[28])] })
 								party_data_genotype[row[0]][row[1]] = 'AB'
 								party_data_real_genotype[row[0]][row[1]] = row[2] + row[3]
@@ -528,6 +534,37 @@ class QualityControl(object):
 								party_data_genotype[row[0]][row[1]] = 'AB'
 								party_data_real_genotype[row[0]][row[1]] = row[2] + row[3]
 								party_data[row[0]].append({row[1] : [float(row[27]), float(row[28])] })
+
+
+		for key in party_data.keys():
+			if len(party_data[key]) > 0 and key not in notPassed.keys():
+				notPassed[key] = []
+				notPassedR[key] = []
+				notPassedG[key] = []
+				notPassedMT[key] = []
+				notPassedC[key] = []
+				genotypes[key] = {}
+				obj = Forel(self.angle, party_data[key], key, party_data_genotype[key], party_data_chromosome[key], self.gender, party_data_real_genotype[key] )
+				r = obj.result
+				byR = obj.resultR
+				flags[key] =  obj.flag
+				gen = obj.genotypes
+				byG = obj.resultG
+				byMT = obj.resultMT
+				byC = obj.resultCluster
+				HWstatus[key] = obj.HW
+				for res in r:
+					notPassed[key].append(res)
+				for res in byR:
+					notPassedR[key].append(res)
+				for res in byG:
+					notPassedG[key].append(res)
+				for res in byMT:
+					notPassedMT[key].append(res)
+				for res in byC:
+					notPassedC[key].append(res)
+				for res in gen.keys():
+					genotypes[key][res] = gen[res]
 
 
 		for key in party_data.keys():
