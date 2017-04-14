@@ -9,20 +9,20 @@ To run this tool on your machine, you need to have Python 2.7 or 3 installed.
 Besides that, you need several packages, which can be installed using pip.
 -scikit-learn
 -plotly
-Тут полный список
+
 
 ### HOW TO RUN
 1. Most common scenario:
-python3 QCFINAL.py Genome_Studio_Report.txt --snps=snps.txt
+python3 cuesea.py Genome_Studio_Report.txt --snps=snps.txt
 This command will run QC using your Genome_Studio_Report.txt as data file and
 snps.txt as list of snps to analyze. X and Y chromosome snps treated as autosomal.
 2. Gender
-python3 QCFINAL.py Genome_Studio_Report.txt --snps=snps.txt --gender gender.txt
+python3 cuesea.py Genome_Studio_Report.txt --snps=snps.txt --gender gender.txt
 This command will run QC using your Genome_Studio_Report.txt as data file and
 snps.txt as list of snps to analyze. This will include proper analyze of X and Y
 chromosome snps as described in HOW IT WORKS paragraph.
 3. Angle
-python3 QCFINAL.py Genome_Studio_Report.txt --angle 8.0
+python3 cuesea.py Genome_Studio_Report.txt --angle 8.0
 The --angle key specifies max angle between points of each cluster. The default
 value is 8.0 degrees, but you can slightly increase or dicrease it.
 
