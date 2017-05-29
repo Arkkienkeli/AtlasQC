@@ -1,9 +1,6 @@
 import csv
 import os
 import random
-import matplotlib
-matplotlib.use('Agg')
-import pylab as plt
 from  math import atan2
 from math import atan
 from math import pi
@@ -11,9 +8,6 @@ from math import degrees
 import numpy as np
 from sklearn import linear_model
 from scipy.spatial.distance import euclidean
-import plotly.plotly as py
-import plotly.graph_objs as go
-import plotly
 import argparse
 
 
@@ -294,7 +288,7 @@ class Forel(object):
 				self.resultMT.append(res)
 				self.result.append(res)
 
-		self.HW == self.Hardy_Weinberg_Equilibrium()
+		self.HW = self.Hardy_Weinberg_Equilibrium()
 
 		if self.HW == False:
 			self.flag = 3
